@@ -3,8 +3,8 @@
 id nginx >/dev/null 2>&1 || useradd -r nginx
 service apache2 stop >/dev/null 2>&1
 pkill apache2 >/dev/null 2>&1
-sed -i 's/^user .*;/user nginx;/' /etc/nginx/nginx.conf
-sed -i 's/^#user .*;/user nginx;/' /etc/nginx/nginx.conf
+sed -i -E 's/^[[:space:]]*#?[[:space:]]*user[[:space:]]+[^;]*;/user nginx;/' /etc/nginx/nginx.conf
+grep -qE '^user[[:space:]]' /etc/nginx/nginx.conf || sed -i '1i user nginx;' /etc/nginx/nginx.conf
 if [ -f /etc/nginx/sites-available/default ]; then
     sed -i 's/listen 80 /listen 8080 /g' /etc/nginx/sites-available/default
     sed -i 's/listen \[::\]:80 /listen [::]:8080 /g' /etc/nginx/sites-available/default
