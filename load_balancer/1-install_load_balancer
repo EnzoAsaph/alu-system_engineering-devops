@@ -33,7 +33,7 @@ frontend http_front
     default_backend http_back
 backend http_back
     balance roundrobin
-    server 7081-web-01 32.198.94.138:80 check
-    server 7081-web-02 54.197.38.109:80 check
+    server 7081-web-01 3.82.203.173:80 check
+    server 7081-web-02 13.221.226.57:80 check
 HAPROXY_CONF
 service haproxy start
