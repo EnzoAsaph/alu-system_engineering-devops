@@ -1,26 +1,23 @@
 #!/usr/bin/env bash
 # Configures the container so Nginx runs as the nginx user and listens on port 8080
-id nginx >/dev/null 2>&1 || useradd -r nginx
-service apache2 stop >/dev/null 2>&1
-pkill apache2 >/dev/null 2>&1
-sed -i -E 's/^[[:space:]]*#?[[:space:]]*user[[:space:]]+[^;]*;/user nginx;/' /etc/nginx/nginx.conf
+service apache2 stop 2>/dev/null
+pkill apache2 2>/dev/null
+id nginx 2>/dev/null || useradd -r nginx
+sed -i -E 's/^[#[:space:]]*user[[:space:]]+[^;]*;/user nginx;/' /etc/nginx/nginx.conf
 grep -qE '^user[[:space:]]' /etc/nginx/nginx.conf || sed -i '1i user nginx;' /etc/nginx/nginx.conf
-if [ -f /etc/nginx/sites-available/default ]; then
-    sed -i 's/listen 80 /listen 8080 /g' /etc/nginx/sites-available/default
-    sed -i 's/listen \[::\]:80 /listen [::]:8080 /g' /etc/nginx/sites-available/default
-fi
-if [ -f /etc/nginx/sites-enabled/default ]; then
-    sed -i 's/listen 80 /listen 8080 /g' /etc/nginx/sites-enabled/default
-    sed -i 's/listen \[::\]:80 /listen [::]:8080 /g' /etc/nginx/sites-enabled/default
-fi
-if [ -f /etc/nginx/conf.d/default.conf ]; then
-    sed -i 's/listen  *80;/listen 8080;/g' /etc/nginx/conf.d/default.conf
-fi
+for f in /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf; do
+    if [ -f "$f" ]; then
+        sed -i -E 's/listen[[:space:]]+80([; ])/listen 8080\1/g' "$f"
+        sed -i -E 's/listen[[:space:]]+\[::\]:80([; ])/listen [::]:8080\1/g' "$f"
+    fi
+done
+chmod 644 /etc/nginx/nginx.conf
 mkdir -p /var/lib/nginx /var/log/nginx
+chown -R nginx:nginx /etc/nginx /var/lib/nginx /var/log/nginx
 touch /run/nginx.pid
-chown -R nginx:nginx /etc/nginx /var/lib/nginx /var/log/nginx /run/nginx.pid
-pkill nginx >/dev/null 2>&1
+chown nginx:nginx /run/nginx.pid
+pkill nginx 2>/dev/null
 sleep 1
-su nginx -s /bin/bash -c '/usr/sbin/nginx'
+sudo -u nginx service nginx restart 2>/dev/null || su -s /bin/bash nginx -c '/usr/sbin/nginx'
 sleep 1
-pgrep nginx >/dev/null || /usr/sbin/nginx
+pgrep -x nginx >/dev/null || su -s /bin/bash nginx -c '/usr/sbin/nginx'
